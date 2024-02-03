@@ -2,6 +2,8 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var app = express();
 var database = require("./database");
+var multer = require('multer');
+var upload = multer();
 //Allow all requests from all domains & localhost
 app.all("/*", function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
@@ -12,10 +14,49 @@ app.all("/*", function (req, res, next) {
   res.header("Access-Control-Allow-Methods", "POST, GET");
   next();
 });
-
+// app.use(bodyParser.urlencoded());
+app.use(upload.array());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.post("/", function (req, res) {
+  console.log(req.body);
+  res.send("ok")
+});
+app.get("/", function (req, res) {
+  console.log(req.query);
+  res.send("ok")
+});
+app.get("/mock", async function (req, res) {
+  const fs = require('fs');
+  const path = require('path');
 
+  const folderPath = './uploads/vh/'; // Đường dẫn đến thư mục bạn muốn đọc
+
+  fs.readdir(folderPath, async (err, files) => {
+    if (err) {
+      console.error('Lỗi khi đọc thư mục:', err);
+      return;
+    }
+    var list_file = []
+    for await (const file of files) {
+      const filePath = path.join(folderPath, file);
+      await list_file.push({
+        title: file,
+        filename: encodeURI(file),
+        size: 0
+      })
+    }
+    // Ghi chuỗi JSON vào file
+    fs.writeFile('./uploads/mock.json', JSON.stringify(list_file), (err) => {
+      if (err) {
+        console.error('Lỗi khi ghi file:', err);
+        return;
+      }
+      console.log('File JSON đã được ghi thành công!');
+    });
+  });
+  res.send('Đã tạo mock.json mới')
+})
 app.post("/get_list_top_coin", function (req, res) {
   console.log("GET From SERVER");
   var data = req.body;
