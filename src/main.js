@@ -23,38 +23,64 @@ app.post("/", function (req, res) {
   res.send("ok")
 });
 app.get("/", function (req, res) {
-  console.log(req.query);
+  console.log(JSON.parse(req.query.msg));
   res.send("ok")
 });
+function tach_ten_file(filename)
+{
+  const regex = /\[(.*?)\]/g;
+  const matches = [...filename.matchAll(regex)];
+  const values = matches.map(match => match[1]);
+
+  // Giá trị "0100846018258000"
+  const firstValue = values[0];
+
+  // Giá trị "v0"
+  const secondValue = values[1];
+  return {
+    id: firstValue,
+    version: secondValue
+  }
+}
 app.get("/mock", async function (req, res) {
   const fs = require('fs');
   const path = require('path');
 
-  const folderPath = './uploads/vh/'; // Đường dẫn đến thư mục bạn muốn đọc
-
-  fs.readdir(folderPath, async (err, files) => {
-    if (err) {
-      console.error('Lỗi khi đọc thư mục:', err);
-      return;
-    }
-    var list_file = []
-    for await (const file of files) {
-      const filePath = path.join(folderPath, file);
-      await list_file.push({
-        title: file,
-        filename: encodeURI(file),
-        size: 0
-      })
-    }
-    // Ghi chuỗi JSON vào file
-    fs.writeFile('./uploads/mock.json', JSON.stringify(list_file), (err) => {
+  const folderPath = ['viethoa', 'switch_patch', 'switch_app']; // Đường dẫn đến thư mục bạn muốn đọc
+  folderPath.map(async(p) => {
+  {
+    var newPath = `./uploads/${p}`
+    
+    await fs.readdir(newPath, async (err, files) => {
+      console.log(files);
       if (err) {
-        console.error('Lỗi khi ghi file:', err);
+        console.error('Lỗi khi đọc thư mục:', err);
         return;
       }
-      console.log('File JSON đã được ghi thành công!');
+      var list_file = []
+      for await (const file of files) {
+        var phan_tich = tach_ten_file(file)
+        const filePath = path.join(newPath, file);
+        await list_file.push({
+          title: file,
+          filename: encodeURI(file),
+          size: 0,
+          id: phan_tich.id,
+          version: phan_tich.version
+        })
+      }
+      // Ghi chuỗi JSON vào file
+      console.log(p);
+      await fs.writeFile(`./uploads/${p}.json`, JSON.stringify(list_file), (err) => {
+        if (err) {
+          console.error('Lỗi khi ghi file:', err);
+          return;
+        }
+        console.log('File JSON đã được ghi thành công!' + p);
+      });
     });
-  });
+  }
+})
   res.send('Đã tạo mock.json mới')
 })
 app.post("/get_list_top_coin", function (req, res) {
